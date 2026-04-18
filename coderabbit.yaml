@@ -1,0 +1,22 @@
+# .github/coderabbit.yaml
+version: 1
+
+# Enable PR reviews
+reviews:
+  enabled: true
+  
+  # Configure review settings
+  settings:
+    # Basic settings
+    base_branch: "main"  # or your default branch
+    max_files: 50
+    
+    # Review scope
+    ignore:
+      - "**/*.md"        # ignore markdown files
+      - "**/test/**"     # ignore test files
+    
+    # Review behavior
+    summarize: true
+    suggest_changes: true
+    ask_questions: true

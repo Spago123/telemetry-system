@@ -1,0 +1,108 @@
+#!/usr/bin/env bash
+
+# Usage: ./build_project [bootstrap|distclean]
+
+set -euo pipefail  # More strict mode (exit on error, unset vars, pipefail)
+
+readonly VENV_DIR="venv"
+
+# ---- Platform Detection ----
+detect_python() {
+    if [[ "$OSTYPE" == "linux-gnu"* ]] || [[ "$OSTYPE" == "darwin"* ]]; then
+        echo "python3"
+    elif [[ "$OSTYPE" == "msys"* ]] || [[ "$OSTYPE" == "cygwin"* ]]; then
+        echo "python"
+    else
+        echo "Unsupported OS: $OSTYPE" >&2
+        exit 1
+    fi
+}
+
+readonly PYTHON=$(detect_python)
+
+# ---- Virtual Environment ----
+activate_venv() {
+    if [[ "$OSTYPE" == "msys"* || "$OSTYPE" == "cygwin"* ]]; then
+        # Windows (Git Bash/Cygwin)
+        source "${VENV_DIR}/Scripts/activate"
+    else
+        # Linux/MacOS
+        source "${VENV_DIR}/bin/activate"
+    fi
+}
+
+create_venv() {
+    if [ ! -d "$VENV_DIR" ]; then
+        echo "🐍 Creating virtualenv..."
+        "$PYTHON" -m venv "$VENV_DIR"
+    else
+        echo "⚠️ Virtualenv already exists."
+    fi
+}
+
+# ---- Cleanup Helpers ----
+remove_directory() {
+    local dir=$1
+    if [ -d "$dir" ]; then
+        echo "🗑️ Removing $dir..."
+        rm -rf "$dir"
+    fi
+}
+
+clean_caches() {
+    echo "🧼 Purging caches..."
+    local cache_dirs=("__pycache__" ".mypy_cache" ".pytest_cache" "*.egg-info")
+    for cache in "${cache_dirs[@]}"; do
+        find . -type d -name "$cache" -exec rm -rf {} +
+    done
+}
+
+# ---- Main Commands ----
+bootstrap() {
+    echo "🚀 Bootstrapping project..."
+
+    create_venv
+    activate_venv
+
+    echo "📦 Installing dependencies..."
+    # Use python -m pip instead of direct pip
+    "$PYTHON" -m pip install --upgrade pip
+    [ -f "deps/requirements-python.txt" ] && "$PYTHON" -m pip install -r deps/requirements-python.txt
+
+    # Install my python packages
+    pip install -e .
+
+    echo "🔧 Installing pre-commit hooks..."
+    pre-commit install
+
+    echo "✅ Done! Run 'source ${VENV_DIR}/bin/activate' to start."
+}
+
+distclean() {
+    echo "🧹 Nuclear cleanup..."
+
+    # Deactivate venv if active
+    if declare -f deactivate > /dev/null; then
+        echo "🛑 Deactivating virtualenv..."
+        deactivate
+    fi
+
+    remove_directory "$VENV_DIR"
+    clean_caches
+
+    echo "✨ Spotless!"
+}
+
+# ---- Argument Handling ----
+main() {
+    case "${1:-}" in
+        bootstrap) bootstrap ;;
+        distclean) distclean ;;
+        *)
+            echo "Usage: $0 [bootstrap|distclean]"
+            exit 1
+            ;;
+    esac
+}
+
+main "$@"
