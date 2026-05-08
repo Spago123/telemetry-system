@@ -15,6 +15,8 @@ reviews:
     ignore:
       - "**/*.md"        # ignore markdown files
       - "**/test/**"     # ignore test files
+      - "VERSION"        # ignore version files
+      - ".github/**"     # ignore GitHub config files
 
     # Review behavior
     summarize: true
