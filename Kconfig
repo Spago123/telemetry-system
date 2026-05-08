@@ -1,0 +1,18 @@
+menuconfig LIB_TELEMETRY
+	bool "Enable telemetry system"
+	default n
+	help
+	  Enables the variable registry and telemetry tasks.
+
+if LIB_TELEMETRY
+
+config TELEMETRY_INTERVAL_MS
+	int "Telemetry sending interval (ms)"
+	range 1 10000
+	default 1000
+
+config TELEMETRY_VARIABLE_LIST_FILE
+	string "Path to variable list header"
+	default "variable_list_example.h"
+
+endif # LIB_TELEMETRY
